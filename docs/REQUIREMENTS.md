@@ -26,7 +26,7 @@
 
 | 编号 | 需求描述 | 优先级 | 状态 | 备注 |
 |------|----------|--------|------|------|
-| REQ-001 | 分镜脚本批量转ComfyUI workflow，自动出图/出视频 | 高 | 待细化 | 输入格式（分镜脚本长什么样）、如何映射到具体ComfyUI workflow/节点参数，待与用户细化 |
+| REQ-001 | 分镜脚本批量转ComfyUI workflow，自动出图/出视频 | 高 | 🟢v1已实现（仅文生图） | `cinesolo render run <storyboard.yaml>`，用镜头的prompt/negative_prompt/workflow_params驱动ComfyUI的`workflows/txt2img_basic.json`模板（SD1.5文生图），已端到端验证成功。当前只支持这一个模板/一种生成方式（出图），出视频、支持更多workflow模板（Z-Image/Qwen-Image/Wan视频等）留待后续迭代 |
 | REQ-002 | 将生成的素材按分镜顺序自动拼剪成初剪 | 高 | 待细化 | 用ffmpeg（服务器已有）做时间线拼接，转场/配乐等细节待定 |
 | REQ-003 | 提供CLI工具，可命令行触发分镜生成/剪辑任务 | 高 | 待细化 | CLI为最小可用形态，优先落地 |
 | REQ-004 | 提供Web界面，可视化管理项目/查看生成结果/触发任务 | 中 | 待细化 | 在CLI能跑通核心流程之后再做，作为CLI的上层界面 |
@@ -96,3 +96,4 @@ shots:
 | 2026-09-07 | 确定第一优先级范围 | 优先自动化「分镜」「剪辑」两个环节；交互方式CLI+Web（先CLI后Web）；补充REQ-001~005及目录规范草案 |
 | 2026-09-07 | 固化目录规范与分镜格式 | 数据盘选定`/root/autodl-tmp`；分镜脚本格式确认为结构化YAML（storyboard.yaml），开始写最小CLI代码脚手架 |
 | 2026-09-07 | 打通ComfyUI启动与API | 用户扩容磁盘后确认`autodl-tmp`可用；找到并验证了ComfyUI启动命令与HTTP API（system_stats/object_info/prompt/history），为REQ-001实现打下基础 |
+| 2026-09-07 | REQ-001 v1（文生图）端到端跑通 | 用镜像自带的90个开源workflow之一（SD图像系列-SD15简单文生图，用现有anything-v5模型，零额外下载）做成`workflows/txt2img_basic.json`模板；实现`cinesolo render run`；在服务器上实测生成成功 |

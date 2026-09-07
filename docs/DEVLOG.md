@@ -131,6 +131,21 @@ CineSolo/
   - `models/checkpoints`下已有SD1.5/SDXL/FLUX1等分类目录和至少一个模型文件，说明基础模型库是现成的
 - **下一步**：把这套启动流程和API使用方式写进需求/开发文档固化下来（本次已做）；接下来可以开始设计REQ-001的workflow模板机制（比如先手动在ComfyUI里连好一个文生图/文生视频workflow，导出API格式json，CineSolo读取并替换prompt等参数后提交）
 
+### 2026-09-07（REQ-001 v1：文生图端到端跑通）
+
+- 用户明确要求先做文生图，让我调研开源workflow；发现根本不用上网搜——**这套AutoDL镜像自带了90个现成的社区workflow**（`~/ComfyUI/user/default/workflows/云绘基础工作流/`下，通过ComfyUI的`/api/v2/userdata`接口或直接SFTP能拿到），覆盖Flux/SD/SDXL/Qwen-Image/Z-Image/Wan视频/LTX2/HiDream/TTS等全套
+- 盘点了模型现状：`models/checkpoints`下**只有一个真实模型文件**`anything-v5-PrtRE.safetensors`（SD1.5动漫风，约2G），其余SDXL/FLUX1等分类目录都是空的占位文件夹（`put_xxx_here`）。为了不额外占用磁盘/不用等下载，v1选了最简单的 **`SD图像系列/SD15-简单文生图.json`**，正好用这个已有模型，零下载
+- 把这个workflow从UI图结构转换成ComfyUI的**API提交格式**（节点id→{class_type,inputs}的字典），存成仓库里的 [`workflows/txt2img_basic.json`](../workflows/txt2img_basic.json)，作为v1的固定模板
+- 新增代码：
+  - `src/cinesolo/comfyui_client.py` —— ComfyUI HTTP API最小封装：`submit_prompt`(POST /prompt)、`wait_for_result`(轮询GET /history/<id>)、`fetch_image`(GET /view)
+  - `src/cinesolo/render.py` —— `build_workflow_for_shot`把镜头的prompt/negative_prompt/workflow_params（width/height/seed/ckpt_name）套进模板；`render_shot`/`render_storyboard`驱动生成并把图片存到`<episode_dir>/<shot_id>/generated/`
+  - `cinesolo render run <storyboard.yaml>` 命令正式实现（不再是占位提示）
+  - `config.py`新增`get_comfyui_base_url()`，默认`http://127.0.0.1:6006`，可用`COMFYUI_BASE_URL`环境变量覆盖（因为ComfyUI只监听127.0.0.1，CineSolo需要在服务器本机跑，或配代理地址）
+- **本地测试**：新增`tests/test_render.py`（mock ComfyUI客户端，不依赖真实网络），加上之前的测试，共8项pytest全过
+- **端到端实测**（直接在服务器上用curl模拟render.py的提交逻辑，验证workflow JSON本身没问题）：提交"竹林里的小熊猫"提示词 → ComfyUI返回`status: success` → 成功拿到生成图片，效果正常（已发给用户看）
+- 还没做：把`cinesolo`包本身部署到服务器上跑一遍完整CLI命令（目前端到端验证是用等价的curl payload做的，逻辑等价但没有实测CLI本身在服务器conda环境里能装能跑）
+- 下一步：①把代码部署到服务器验证CLI本身 ②开始做REQ-002（自动拼剪）③后续再考虑升级到更高质量的模型（Z-Image/Qwen-Image等，需要下载，到时候提醒用户扩容）
+
 ### 2026-09-07
 
 - 创建仓库文档骨架：`docs/REQUIREMENTS.md`、`docs/DEVLOG.md`、`docs/BUGS.md`，推送初始提交到GitHub

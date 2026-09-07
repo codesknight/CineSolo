@@ -34,3 +34,10 @@ def get_episode_dir(project: str, episode: str) -> Path:
 
 def get_shot_dir(project: str, episode: str, shot_id: str) -> Path:
     return get_episode_dir(project, episode) / shot_id
+
+
+def get_comfyui_base_url() -> str:
+    """ComfyUI HTTP API地址。默认只监听127.0.0.1:6006，CineSolo需要在服务器本机跑，
+    或用 COMFYUI_BASE_URL 环境变量指向AutoDL的公网代理地址。见 docs/REQUIREMENTS.md。
+    """
+    return os.environ.get("COMFYUI_BASE_URL", "http://127.0.0.1:6006")

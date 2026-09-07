@@ -22,3 +22,4 @@
 
 - 2026-09-07：项目初始化，暂无可测试内容
 - 2026-09-07：CLI最小脚手架本地验证（Windows开发机）——`pytest`4项测试全过；`cinesolo storyboard validate`、`cinesolo project init-from-storyboard`手动跑通，生成的目录结构符合预期（见docs/REQUIREMENTS.md 3.1）。尚未在远程服务器（实际运行环境）上验证
+- 2026-09-07：REQ-001 v1（文生图）——新增`tests/test_render.py`，8项pytest全过。端到端在服务器上实测：提交`workflows/txt2img_basic.json`（替换prompt后）→ ComfyUI返回`status:success`→ 成功拿到生成图片，人工检查图片内容与提示词相符（竹林小熊猫，画面正常无异常）。**注意**：这次端到端测试是用等价的curl payload直接测的workflow逻辑，`cinesolo`这个Python包本身还没有部署到服务器上跑过，CLI命令`render run`本身尚未在真实服务器环境实测（只在本地Windows用mock测试过）

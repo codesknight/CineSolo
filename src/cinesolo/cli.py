@@ -22,7 +22,7 @@ for _stream in (sys.stdout, sys.stderr):
             pass
 
 from cinesolo import __version__
-from cinesolo.config import get_data_root
+from cinesolo.config import get_comfyui_base_url, get_data_root, get_shot_dir
 from cinesolo.project import init_shots_from_storyboard
 from cinesolo.storyboard import load_storyboard, validate_storyboard_file
 
@@ -76,11 +76,34 @@ def render() -> None:
 
 @render.command("run")
 @click.argument("path", type=click.Path(exists=True))
-def render_run(path: str) -> None:
-    """驱动ComfyUI，按storyboard批量生成每个镜头的素材。"""
-    click.echo("尚未实现：批量驱动ComfyUI出图/出视频 (REQ-001)。")
-    click.echo("需要先确定：如何通过API调用ComfyUI（HTTP API/websocket）、workflow模板怎么定义与参数化。")
-    sys.exit(2)
+@click.option("--base-url", default=None, help="ComfyUI API地址，默认读COMFYUI_BASE_URL环境变量或http://127.0.0.1:6006")
+@click.option("--timeout", default=300.0, help="单个镜头等待生成结果的超时秒数")
+def render_run(path: str, base_url: str | None, timeout: float) -> None:
+    """驱动ComfyUI，按storyboard批量为每个镜头生成图片（当前只支持txt2img_basic模板，见workflows/）。"""
+    from cinesolo.render import render_storyboard
+
+    ok, message = validate_storyboard_file(path)
+    if not ok:
+        click.echo(message)
+        sys.exit(1)
+
+    sb = load_storyboard(path)
+    url = base_url or get_comfyui_base_url()
+    click.echo(f"用ComfyUI ({url}) 为 {sb.project}/{sb.episode} 的 {len(sb.shots)} 个镜头生成图片...")
+
+    def shot_generated_dir(shot_id: str):
+        return get_shot_dir(sb.project, sb.episode, shot_id) / "generated"
+
+    try:
+        results = render_storyboard(sb, shot_generated_dir, base_url=url, timeout=timeout)
+    except Exception as e:  # noqa: BLE001 - CLI顶层统一转成友好提示
+        click.echo(f"生成失败: {e}")
+        sys.exit(1)
+
+    for shot_id, paths in results.items():
+        click.echo(f"  - {shot_id}: {len(paths)} 张")
+        for p in paths:
+            click.echo(f"      {p}")
 
 
 @main.group()
