@@ -111,6 +111,26 @@ CineSolo/
 - **磁盘问题结论（补充BUG-002）**：进一步检查`/etc/fstab`（内容是"UNCONFIGURED FSTAB FOR BASE SYSTEM"）、`blkid`（空）、`findmnt`、环境变量，均未发现任何数据盘挂载配置或线索。这台实例是Docker容器（根目录overlay指向宿主机`/data/docker/overlay2/...`），**从容器内部SSH无法挂载/发现数据盘**——数据盘的挂载是宿主机/AutoDL控制台层面的事，不是容器内能解决的。有一点线索：AutoDL自带的`autopanel`进程启动参数是`--work-dir=/root/autodl-tmp --cache-dir=/root/autodl-tmp`，说明AutoDL官方设计上是把`/root/autodl-tmp`当作数据目录用的，但**这个具体实例没有把它绑定到真正的独立磁盘**——需要用户去AutoDL控制台核实这个实例是否购买/挂载了数据盘
 - **ComfyUI启动方式未找到**：翻了常见位置（`/root`下的start/run脚本、`.bashrc`、`find`全局搜`.sh`），只找到`LaunchTool311/start_aroz.sh`——这个是启动"arozos"（一个Web桌面工具，监听6008端口）的，不是ComfyUI。当前运行中的进程（`ps aux`）只有supervisord、tensorboard(6007)、jupyter-lab、autopanel、sshd，没有ComfyUI相关进程。`.bash_history`为空，找不到历史启动命令。**需要用户直接告诉我ComfyUI的启动脚本路径/命令**，或说明是否通过AutoDL网页控制台的"无卡模式"之外的按钮/入口启动
 
+### 2026-09-07（用户扩容磁盘 + 找到并成功启动ComfyUI + API打通）
+
+- **磁盘问题已缓解**：用户在AutoDL控制台手动扩容，系统盘从30G→**79G，可用57G**。同时用户运行了`~/启动.ipynb`（镜像自带的初始化notebook）。扩容/重装后，ComfyUI被重新安装到了 **`/root/autodl-tmp/ComfyUI`**（而非之前的`/root/ComfyUI`）——说明这套AutoDL镜像本身就是把`autodl-tmp`当作ComfyUI和数据的标准存放位置，与用户"数据放autodl-tmp"的要求一致。**BUG-002降级/关闭**：虽然`autodl-tmp`和系统盘技术上仍是同一个overlay文件系统（不是物理独立盘），但当前总容量79G/剩57G，对当前阶段够用，且是这套镜像的标准用法，不再视为阻塞问题
+- **确认这是知名的"秋叶"系AutoDL ComfyUI镜像**（`ComfyUI_2024`，来自`codewithgpu.com`，当前版本V17.0/2026-08-16），带有`LaunchTool311`可视化启动器和"工具箱.ipynb"插件/模型管理工具。`~/启动.ipynb`是官方说明文档+启动入口
+- **找到真实启动命令**（来自`~/启动.ipynb`"备用-常规启动命令"）：
+  ```bash
+  source ~/miniconda3/etc/profile.d/conda.sh && conda activate base
+  cd /root/LaunchTool311
+  python startup.py --hf-mirror --proxy-on --port=6006 --preview-method=latent2rgb --preview-size=256
+  ```
+  `startup.py`是启动器脚本，实际会去`/root/autodl-tmp/ComfyUI`用`python main.py --port=6006 ...`拉起ComfyUI本体
+- **已成功启动ComfyUI**（当前在后台运行，进程常驻）。**API验证通过**：
+  - `GET http://127.0.0.1:6006/system_stats` → 返回完整系统信息（ComfyUI 0.31.0, PyTorch 2.12.1+cu130, RTX 5090显存33GB可用32.9G空闲）
+  - `GET http://127.0.0.1:6006/` → HTTP 200
+  - `GET http://127.0.0.1:6006/object_info/<节点名>` → 可查询任意节点的参数定义（这是程序化拼装workflow的关键API，REQ-001要用）
+  - 标准提交生成任务的方式是`POST /prompt`（未实测提交真实任务，避免占用GPU/产生不必要开销），完成后可轮询`/history/<prompt_id>`或用websocket
+  - 端口6006只监听在127.0.0.1（不对外），CineSolo的编排代码需要**在服务器本机跑**（或者通过AutoDL的公网代理URL访问，`.env`里能查到`AutoDLService6006URL`）
+  - `models/checkpoints`下已有SD1.5/SDXL/FLUX1等分类目录和至少一个模型文件，说明基础模型库是现成的
+- **下一步**：把这套启动流程和API使用方式写进需求/开发文档固化下来（本次已做）；接下来可以开始设计REQ-001的workflow模板机制（比如先手动在ComfyUI里连好一个文生图/文生视频workflow，导出API格式json，CineSolo读取并替换prompt等参数后提交）
+
 ### 2026-09-07
 
 - 创建仓库文档骨架：`docs/REQUIREMENTS.md`、`docs/DEVLOG.md`、`docs/BUGS.md`，推送初始提交到GitHub

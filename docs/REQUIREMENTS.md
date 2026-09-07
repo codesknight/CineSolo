@@ -78,7 +78,9 @@ shots:
 
 ## 5. 技术选型
 
-- **AI生成引擎**：✅已确认——基于服务器上现有的 **ComfyUI**（RTX 5090，已装40+自定义节点，覆盖视频生成/超分/换脸/打光/语音合成/标注等）。CineSolo定位为在ComfyUI能力之上做**工作流编排/自动化层**（串联剧本→分镜→生成→剪辑，减少手动操作ComfyUI），不重新实现底层生成能力（详见 [开发文档 - 已部署的AI工具](DEVLOG.md#已部署的ai工具这是最关键的部分服务器上已经有一套相当完整的ai影视生产工具链而非空白环境)）
+- **AI生成引擎**：✅已确认——基于服务器上现有的 **ComfyUI**（RTX 5090，已装40+自定义节点，覆盖视频生成/超分/换脸/打光/语音合成/标注等，装在`/root/autodl-tmp/ComfyUI`）。CineSolo定位为在ComfyUI能力之上做**工作流编排/自动化层**（串联剧本→分镜→生成→剪辑，减少手动操作ComfyUI），不重新实现底层生成能力（详见 [开发文档 - 已部署的AI工具](DEVLOG.md#已部署的ai工具这是最关键的部分服务器上已经有一套相当完整的ai影视生产工具链而非空白环境)）
+- **ComfyUI启动**：`source ~/miniconda3/etc/profile.d/conda.sh && conda activate base && cd /root/LaunchTool311 && python startup.py --hf-mirror --proxy-on --port=6006 --preview-method=latent2rgb --preview-size=256`，启动后HTTP API在`http://127.0.0.1:6006`（仅本机可访问）
+- **ComfyUI API**（已实测可用）：`GET /system_stats`（系统/GPU状态）、`GET /object_info/<节点名>`（查询节点参数定义，用于程序化拼装workflow）、`POST /prompt`（提交生成任务，标准方式）、`GET /history/<prompt_id>`或websocket（查询任务结果）——这是REQ-001要用的核心接口
 - **运行环境**：AutoDL云GPU服务器，Python 3.11 (miniconda)，ffmpeg已具备
 - **存储约定**：项目产出物（模型、生成的素材/中间文件等）一律放**数据盘 `/root/autodl-tmp`**，不放系统盘（系统盘仅30G，空间紧张），见 3.1 目录规范
 - **交互方式**：✅已确认——CLI + Web 都要。落地顺序：先做CLI打通核心流程（分镜自动化+剪辑自动化），再在CLI之上包一层Web
@@ -93,3 +95,4 @@ shots:
 | 2026-09-07 | 用户确认技术方向 | 确认CineSolo=ComfyUI之上的工作流编排/自动化层；补充存储约定（产出物放数据盘，不放系统盘） |
 | 2026-09-07 | 确定第一优先级范围 | 优先自动化「分镜」「剪辑」两个环节；交互方式CLI+Web（先CLI后Web）；补充REQ-001~005及目录规范草案 |
 | 2026-09-07 | 固化目录规范与分镜格式 | 数据盘选定`/root/autodl-tmp`；分镜脚本格式确认为结构化YAML（storyboard.yaml），开始写最小CLI代码脚手架 |
+| 2026-09-07 | 打通ComfyUI启动与API | 用户扩容磁盘后确认`autodl-tmp`可用；找到并验证了ComfyUI启动命令与HTTP API（system_stats/object_info/prompt/history），为REQ-001实现打下基础 |
