@@ -1,0 +1,25 @@
+[project]
+name = "cinesolo"
+version = "0.1.0"
+description = "「一个人 + AI」完成影视全流程 —— 个人影视项目生产流水线编排工具"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.1",
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+cinesolo = "cinesolo.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

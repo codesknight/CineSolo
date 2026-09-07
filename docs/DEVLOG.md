@@ -78,6 +78,20 @@ CineSolo/
 - 用户确定第一优先级：先自动化「分镜」和「剪辑」两个环节；交互方式CLI+Web都要（先CLI后Web）；素材按"项目/集数/镜头号"目录存数据盘
 - 需求文档已补充REQ-001~005和目录规范草案（见 [REQUIREMENTS.md](REQUIREMENTS.md)）
 - 下一步：确认目录规范放`autodl-tmp`还是`autodl-fs`；明确分镜脚本的输入格式；然后可以开始最小代码脚手架（CLI骨架 + 项目目录初始化）
+- 用户确认：数据盘用`autodl-tmp`；分镜脚本用结构化YAML格式；文档类提交以后可直接推送不用每次问
+
+### 2026-09-07（晚间：最小CLI脚手架）
+
+- 建立Python包结构：`src/cinesolo/`（`config.py`路径配置、`storyboard.py`分镜YAML的pydantic模型+加载校验、`project.py`目录初始化、`cli.py`用click组织的命令行入口）
+- 已实现命令：`cinesolo storyboard validate <file>`、`cinesolo project init-from-storyboard <file>`
+- 尚未实现（命令会明确提示"未实现"）：`cinesolo render run`（REQ-001，驱动ComfyUI批量生成）、`cinesolo edit run`（REQ-002，自动拼剪）——这两个是核心价值所在，下一步重点
+- 加入`pyproject.toml`（依赖click/pyyaml/pydantic）、`examples/storyboard_example.yaml`示例分镜、`tests/`（pytest，4项测试）
+- 本地（Windows开发机）用venv装包+跑测试全部通过；CLI手动验证跑通；**尚未在远程服务器上跑过**，服务器Python环境是miniconda3非独立venv，安装方式待确认（这次先用`.venv`本地验证代码逻辑本身没问题）
+- 发现并修复BUG-001（Windows终端中文输出乱码，纯显示问题不影响数据，见docs/BUGS.md）
+- 下一步：
+  1. 去服务器上确认ComfyUI的API调用方式（HTTP API是否已开、workflow怎么导出成可参数化的模板），这是实现`render run`（REQ-001）的前提
+  2. 确定剪辑规范（转场、时长对齐、输出格式），实现`edit run`（REQ-002）
+  3. 把代码部署到服务器验证一遍（在miniconda环境里装包）
 
 ### 2026-09-07
 

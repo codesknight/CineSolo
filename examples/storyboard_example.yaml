@@ -1,0 +1,21 @@
+project: "示例项目"
+episode: "E01"
+shots:
+  - id: "S001"
+    scene: "雨夜街道，霓虹灯反光"
+    camera: "缓慢推近"
+    duration_sec: 4
+    prompt: "cinematic rainy night street, neon reflections, slow dolly in"
+    negative_prompt: "blurry, low quality"
+    workflow: "wan_video_t2v"
+    workflow_params: {}
+    notes: ""
+  - id: "S002"
+    scene: "主角回头，特写"
+    camera: "固定镜头"
+    duration_sec: 2
+    prompt: "close up portrait, character turning head, cinematic lighting"
+    negative_prompt: "blurry, low quality"
+    workflow: "wan_video_t2v"
+    workflow_params: {}
+    notes: ""
