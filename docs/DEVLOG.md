@@ -106,6 +106,11 @@ CineSolo/
 - **ComfyUI当前未运行**（无进程、8188/6006端口均未监听）。查看`~/ComfyUI/comfyui.log`（最后一次运行记录停在2024-12-19，说明是较早的历史日志/镜像自带，不代表最近状态），实际GUI端口配置是`127.0.0.1:6006`（不是ComfyUI默认的8188）。启动方式待确认——可能通过AutoDL控制台的"启动"按钮或某个脚本触发，`LaunchTool311/start_aroz.sh`看起来是相关的启动脚本之一，具体流程待用户说明或下次登录时实测
 - **⚠️发现阻塞性问题（BUG-002）**：核实后确认`/root/autodl-tmp`并非独立数据盘，只是系统盘（30G，仅剩7.2G）上的普通目录；`/root/autodl-fs`软链接目标未挂载，不可写。之前"项目资源存到`/root/autodl-tmp`"的约定实际不可行。已记入BUGS.md，**这是当前最高优先级的待解决问题**，会阻塞后续的代码部署和素材生成——已暂停"同步部署代码到服务器"这一步，等用户就磁盘问题给出决策
 
+### 2026-09-07（磁盘问题深挖 + 查找ComfyUI启动方式）
+
+- **磁盘问题结论（补充BUG-002）**：进一步检查`/etc/fstab`（内容是"UNCONFIGURED FSTAB FOR BASE SYSTEM"）、`blkid`（空）、`findmnt`、环境变量，均未发现任何数据盘挂载配置或线索。这台实例是Docker容器（根目录overlay指向宿主机`/data/docker/overlay2/...`），**从容器内部SSH无法挂载/发现数据盘**——数据盘的挂载是宿主机/AutoDL控制台层面的事，不是容器内能解决的。有一点线索：AutoDL自带的`autopanel`进程启动参数是`--work-dir=/root/autodl-tmp --cache-dir=/root/autodl-tmp`，说明AutoDL官方设计上是把`/root/autodl-tmp`当作数据目录用的，但**这个具体实例没有把它绑定到真正的独立磁盘**——需要用户去AutoDL控制台核实这个实例是否购买/挂载了数据盘
+- **ComfyUI启动方式未找到**：翻了常见位置（`/root`下的start/run脚本、`.bashrc`、`find`全局搜`.sh`），只找到`LaunchTool311/start_aroz.sh`——这个是启动"arozos"（一个Web桌面工具，监听6008端口）的，不是ComfyUI。当前运行中的进程（`ps aux`）只有supervisord、tensorboard(6007)、jupyter-lab、autopanel、sshd，没有ComfyUI相关进程。`.bash_history`为空，找不到历史启动命令。**需要用户直接告诉我ComfyUI的启动脚本路径/命令**，或说明是否通过AutoDL网页控制台的"无卡模式"之外的按钮/入口启动
+
 ### 2026-09-07
 
 - 创建仓库文档骨架：`docs/REQUIREMENTS.md`、`docs/DEVLOG.md`、`docs/BUGS.md`，推送初始提交到GitHub
